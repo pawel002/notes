@@ -1,3 +1,60 @@
 @use "./base.scss";
 
 // put your custom CSS here!
+/* Dashboard Grid System */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.dashboard-card {
+  background-color: var(--lightgray); /* #24283b in Tokyo Night */
+  border: 1px solid var(--gray); /* #414868 */
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+  text-decoration: none !important; /* Removes underline from the whole card */
+  color: var(--darkgray);
+
+  /* Make the whole card clickable implies an anchor tag wrap, 
+     but for simplicity, we style the internal links */
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--secondary); /* #7aa2f7 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--secondary);
+}
+
+.dashboard-card p {
+  font-size: 0.9rem;
+  margin: 0;
+  color: var(--darkgray);
+}
+
+/* Profile Header Styles */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--gray);
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--secondary);
+}

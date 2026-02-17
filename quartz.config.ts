@@ -29,26 +29,26 @@ const config: QuartzConfig = {
       },
       colors: {
         lightMode: {
-          light: "#faf8f8",
-          lightgray: "#e5e5e5",
-          gray: "#b8b8b8",
-          darkgray: "#4e4e4e",
-          dark: "#2b2b2b",
-          secondary: "#284b63",
-          tertiary: "#84a59d",
-          highlight: "rgba(143, 159, 169, 0.15)",
+          light: "#d5d6db",
+          lightgray: "#cfc9c2",
+          gray: "#9aa5ce",
+          darkgray: "#565f89",
+          dark: "#343b58",
+          secondary: "#3d59a1",
+          tertiary: "#5e81ac",
+          highlight: "rgba(61, 89, 161, 0.15)",
           textHighlight: "#fff23688",
         },
         darkMode: {
-          light: "#161618",
-          lightgray: "#393639",
-          gray: "#646464",
-          darkgray: "#d4d4d4",
-          dark: "#ebebec",
-          secondary: "#7b97aa",
-          tertiary: "#84a59d",
-          highlight: "rgba(143, 159, 169, 0.15)",
-          textHighlight: "#b3aa0288",
+          light: "#1a1b26", // Main background
+          lightgray: "#24283b", // UI elements/Sidebar background
+          gray: "#414868", // Borders/Faint text
+          darkgray: "#a9b1d6", // Body text
+          dark: "#c0caf5", // Headers/Bold text
+          secondary: "#7aa2f7", // Links & Accents (Blue)
+          tertiary: "#bb9af7", // Hover states (Purple)
+          highlight: "rgba(122, 162, 247, 0.15)", // Internal link background
+          textHighlight: "#bb9af788",
         },
       },
     },
