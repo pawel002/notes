@@ -12,17 +12,17 @@ Quantization coverts these high-precision numbers into lower precision formats s
 
 ### FP32
 
-![FP32 Diagram](machine-learning/res/01/fp32.png)
+![FP32 Diagram](machine-learning/res/model-optimization/fp32.png)
 
 ### FP16 - half precision
 
-![FP16 Diagram](machine-learning/res/01/fp16.png)
+![FP16 Diagram](machine-learning/res/model-optimization/fp16.png)
 
 ### BF16 - better float
 
 Keeps the same exponent size as normal float, therefore can represent number of the same size as normal 32 bit floats. Because of the small mantisa it has much bigger intervals between neighboring numbers.
 
-![BF16 Diagram](machine-learning/res/01/bf16.png)
+![BF16 Diagram](machine-learning/res/model-optimization/bf16.png)
 
 ## Approaches to Quantization
 
