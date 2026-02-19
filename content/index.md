@@ -2,8 +2,10 @@
 title: Notes
 ---
 
-## Main Topics
+## Topics
 
 - [Computer Vision](/computer-vision)
+
+- [Machine Learning](/machine-learning)
 
 </div>

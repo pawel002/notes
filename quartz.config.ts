@@ -8,7 +8,7 @@ import * as Plugin from "./quartz/plugins"
  */
 const config: QuartzConfig = {
   configuration: {
-    pageTitle: "Quartz 4",
+    pageTitle: "Notes",
     pageTitleSuffix: "",
     enableSPA: true,
     enablePopovers: true,
@@ -40,14 +40,14 @@ const config: QuartzConfig = {
           textHighlight: "#fff23688",
         },
         darkMode: {
-          light: "#1a1b26", // Main background
-          lightgray: "#24283b", // UI elements/Sidebar background
-          gray: "#414868", // Borders/Faint text
-          darkgray: "#a9b1d6", // Body text
-          dark: "#c0caf5", // Headers/Bold text
-          secondary: "#7aa2f7", // Links & Accents (Blue)
-          tertiary: "#bb9af7", // Hover states (Purple)
-          highlight: "rgba(122, 162, 247, 0.15)", // Internal link background
+          light: "#1a1b26",
+          lightgray: "#24283b",
+          gray: "#414868",
+          darkgray: "#a9b1d6",
+          dark: "#c0caf5",
+          secondary: "#7aa2f7",
+          tertiary: "#bb9af7",
+          highlight: "rgba(122, 162, 247, 0.15)",
           textHighlight: "#bb9af788",
         },
       },
@@ -62,7 +62,7 @@ const config: QuartzConfig = {
       Plugin.SyntaxHighlighting({
         theme: {
           light: "github-light",
-          dark: "github-dark",
+          dark: "tokyo-night",
         },
         keepBackground: false,
       }),
