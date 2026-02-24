@@ -7,7 +7,7 @@ $$
     \newcommand{\one}{\mathbf{1}}
 $$
 
-## Introduction to YOLO architecture
+## Introduction to the architecture
 
 Before YOLO, models like R-CNN used a two-stage approach: first proposing potential regions where objects might be, and then classifying those regions. YOLO changed the game by doing it all at once using a single Convolutional Neural Network (CNN). The main concepts behind YOLO:
 
@@ -25,7 +25,7 @@ For a given grid cell, the network outputs a tensor containing the bounding box 
 
 - $C_\text{conf}$: the confidence score (the probability that an object exists multiplied by the Intersection over Union (IoU) between the predicted box and the ground truth).
 
-## Math behind YOLO
+## Math
 
 To understand the internal processes, we need to look at how the model decodes bounding boxes and how it calculates its loss during training.
 
@@ -54,9 +54,30 @@ The YOLO training process optimizes a massive, multi-part loss function. It comp
 
 $$
     \begin{split}
-        \loss_\text{loc} &= \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \one_{ij}^\text{obj} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 + (\sqrt{w_i} - \sqrt{\hat{w}_i})^2 + (\sqrt{h_i} - \sqrt{\hat{h}_i})^2 \right] \\
-        \loss_\text{obj} &=
+        \loss_\text{loc} &= \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 + (\sqrt{w_i} - \sqrt{\hat{w}_i})^2 + (\sqrt{h_i} - \sqrt{\hat{h}_i})^2 \right] \\
+        \loss_\text{obj} &= \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} (C_i - \hat{C}_i)^2 + \lambda_\text{noobj} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{noobj} (C_i - \hat{C}_i)^2 \\
+        \loss_\text{class} &= \sum_{i=0}^{S^2} \mathbb{1}_{i}^\text{obj} \sum_{c \in \text{classes}} (p_i(c) - \hat{p}_i(c))^2 \\
+        \loss_{total} &= \loss_\text{loc} + \loss_\text{obj} + \loss_\text{class}
     \end{split}
 $$
 
-hejka
+> [!info]+ Details of the loss equations
+>
+> - $\mathbb{1}_{ij}^\text{obj}$ is a binary mask that is 1 if the $j$-th bounding box in the $i$-th cell is responsible for detecting the object, and 0 otherwise.
+> - The square root of width/height is used so that small deviations in small boxes are penalized more heavily than the same deviations in large boxes.
+
+### Training
+
+Forward Pass: The image is passed through the backbone (feature extractor) and the neck (feature aggregator), finally reaching the head where the grid predictions are made.
+
+Target Assignment: The algorithm matches ground-truth objects to the specific grid cells and anchor boxes that have the highest IoU (Intersection over Union).
+
+Loss Calculation: The model evaluates how far its predictions were from the ground truth using the loss functions (modern YOLOs use variations like CIoU loss for bounding boxes and Focal Loss for classification).
+
+Backpropagation: The weights are updated using optimizers (like AdamW or, in YOLO26, MuSGD).
+
+Post-Processing (Historically): Older YOLO models predicted thousands of boxes. They used Non-Maximum Suppression (NMS) to filter out overlapping boxes, keeping only the one with the highest confidence. Newer versions have engineered this step out entirely.
+
+## Evolution of SOTA
+
+
