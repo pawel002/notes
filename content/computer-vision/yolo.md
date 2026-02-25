@@ -9,6 +9,8 @@ $$
 
 ## Introduction to the architecture
 
+![yolov4](computer-vision/res-yolo/yolov10.png)
+
 Before YOLO, models like R-CNN used a two-stage approach: first proposing potential regions where objects might be, and then classifying those regions. YOLO changed the game by doing it all at once using a single Convolutional Neural Network (CNN). The main concepts behind YOLO:
 
 - First the input image is divided into smaller regions of size $S \times S$.
@@ -61,10 +63,11 @@ $$
     \end{split}
 $$
 
-> [!info]+ Details of the loss equations
->
-> - $\mathbb{1}_{ij}^\text{obj}$ is a binary mask that is 1 if the $j$-th bounding box in the $i$-th cell is responsible for detecting the object, and 0 otherwise.
-> - The square root of width/height is used so that small deviations in small boxes are penalized more heavily than the same deviations in large boxes.
+where:
+
+- $\mathbb{1}_{ij}^\text{obj}$ is a binary mask that is 1 if the $j$-th bounding box in the $i$-th cell is responsible for detecting the object, and 0 otherwise.
+
+- The square root of width/height is used so that small deviations in small boxes are penalized more heavily than the same deviations in large boxes.
 
 ### Training
 
@@ -80,4 +83,131 @@ Post-Processing (Historically): Older YOLO models predicted thousands of boxes. 
 
 ## Evolution of SOTA
 
+**YOLOv1 (2015):** The original paper by Joseph Redmon. Proved that single-stage detection was viable. It struggled with small objects and could only predict two boxes per grid cell.
 
+**YOLOv2 / YOLO9000 (2016):** Introduced anchor boxes, high-resolution classifiers, and Batch Normalization. It could detect over 9000 classes.
+
+**YOLOv4 (2020):** Alexey Bochkovskiy took over. Added Cross-Stage Partial Connections (CSPNet) and "Bag of Freebies" like Mosaic data augmentation, pushing speeds past 100 FPS on GPUs.
+
+**YOLOv5 (2020):** Ultralytics natively ported YOLO to PyTorch. It introduced auto-learning bounding box anchors and hyperparameter evolution.
+
+**YOLOv6 & YOLOv7 (2022):** Developed heavily for industrial and edge applications. YOLOv7 introduced the E-ELAN (Extended Efficient Layer Aggregation Network) architecture for better gradient flow.
+
+**YOLOv8 & YOLOv9 (2023–2024):** YOLOv8 moved to an "anchor-free" architecture. YOLOv9 introduced Programmable Gradient Information (PGI) and the GELAN architecture to fix information bottlenecks in deep layers.
+
+**YOLOv10 & YOLO11 (2024):** The era of NMS-free models began here. YOLOv10 introduced an end-to-end training strategy that eliminated the need for Non-Maximum Suppression, heavily reducing inference latency. YOLO11 optimized parameter efficiency for multi-tasking (segmentation, pose, tracking).
+
+**YOLO26 (Late 2025/2026):** The current state-of-the-art by Ultralytics. YOLO26 is designed from the ground up for massive edge deployment and absolute simplicity:
+
+- Native NMS-Free End-to-End Inference: It completely eliminates NMS natively in the architecture, making deployment on edge devices infinitely easier.
+
+- MuSGD Optimizer: Inspired by breakthroughs in Large Language Models, it uses a hybrid of SGD and Muon for unparalleled training stability.
+
+- DFL Removal: It removes Distribution Focal Loss to simplify hardware exports (like TensorRT and ONNX) without losing accuracy.
+
+- ProgLoss + STAL: Advanced loss optimizations specifically engineered to make small-object detection highly accurate.
+
+## Dive into details
+
+In this section we will explore some techonologies introduced by model authors to increase the performance of subsequent models.
+
+### Cross-Stage Parial Networks (CSPNet)
+
+![CSPNet left](computer-vision/res-yolo/cspnet.png)
+
+Before YOLOv4, architectures like ResNet and DenseNet were heavily used to extract features. Standard implementations suffer from duplicate gradient information. During backpropagation, the gradients of the exact same initial features are repeatedly computed and copied across mutltiple dense layers, which wastes the computation power. v4 integrated CSPNet into the Darknet backbone (creating CSPDarknet53) to solve this. In a standard DenseNet, the output of the $i$-th layer is a function $H_i$ of all preceding feature maps concatenated together:
+
+$$
+    x_i = H_i([x_0, x_1, \dots, x_{i-1}])
+$$
+
+This means the weight updating equation for the $i$-th layer heavily relies on $x_0$ over and over again. CSPNet modifies this by partitioning the base feature map $x_0$ into two parts along the channel dimension:
+
+$$
+    x_0 = [x_0', x_0''].
+$$
+
+The first part, $x_0'$, completely bypasses the dense blocks. It is set aside to preserve the original gradient information. Only the second part, $x_0''$, goes through the computational bottleneck of the dense layers:
+
+$$
+    x_i = H_i([x_0'', x_1, \dots, x_{i-1}]).
+$$
+
+After $k$ dense layers, the output is passed through a transition layer to standardize the channels, producing $x_T$. Finally, this is concatenated with the bypassed $x_0'$:
+
+$$
+    y = \text{Concat}(x_0', x_T).
+$$
+
+By splitting the channels in half, the number of parameters inside the dense block is reduced by roughly 50%. More importantly, because $x_0'$ bypasses the block entirely, the gradient paths are strictly separated. The gradients for $x_0'$ and $x_0''$ are completely independent, which eliminates duplicate gradient flow and speeds up training while maintaining, or even boosting, accuracy.
+
+### Mosaic Data Augmentation
+
+Standard data augmentation flips or crops a single image. Mosaic augmentation takes four different training images and stitches them together into a single grid. The description of boxes of course needs to be transoformed to fit into the new bounds of images.
+
+![mosaic](computer-vision/res-yolo/mosaic.png)
+
+This forces the model to learn to identify objects at a much smaller scale (since the images are scaled down to fit the quadrant). Crucially, it allows Batch Normalization to calculate statistics across four entirely different image contexts simultaneously, significantly reducing the need for massive mini-batch sizes.
+
+### Complete Intersection over Union (CIoU Loss)
+
+![CIoU left](computer-vision/res-yolo/ciou.png)
+
+In earlier YOLO versions, the bounding box regression loss used Mean Squared Error (MSE) on the coordinates. This was flawed because a box of $100 \times 100$ pixels and a box of $10 \times 10$ pixels were penalized equally for a 5-pixel shift, even though the error is disastrous for the smaller box. YOLOv4 introduced Complete IoU (CIoU) loss to the Bag of Freebies, which considers three geometric factors: overlap area, central point distance, and aspect ratio.
+
+The CIoU loss equation is defined as:
+
+$$
+    \loss_\text{CIoU} = 1 - \text{IoU} + \frac{\rho^2(\mathbf{b}, \mathbf{b}^\text{gt})}{c^2} + \alpha v,
+$$
+
+where:
+
+- $\text{IoU}$ is the standard Intersection over Union between the predicted box and ground truth.
+
+- $\rho(\mathbf{b}, \mathbf{b}^\text{gt})$ is the Euclidean distance between the center points of the predicted box $\mathbf{b}$ and ground truth box $\mathbf{b}^\text{gt}$.
+
+- $c$ is the diagonal length of the smallest enclosing box that covers both the predicted and ground truth boxes.
+
+- $v$ is a mathematical measure of the consistency of the aspect ratio, calculated as:
+
+  $$
+      v = \frac{4}{\pi^2} \left( \arctan\left(\frac{w^\text{gt}}{h^\text{gt}}\right) - \arctan\left(\frac{w}{h}\right) \right)^2
+  $$
+
+- $\alpha$ is a dynamic trade-off parameter that gives higher priority to the aspect ratio when the boxes are overlapping well:
+
+  $$
+      \alpha = \frac{v}{(1 - \text{IoU}) + v}
+  $$
+
+This equation forces the network to not just overlap the boxes, but to perfectly align their centers and match their exact shape proportions.
+
+> [!note]+ GIoU - Generalized Intersection over Union
+> This loss function was also considered. It is based on the equation:
+>
+> $$
+>   \text{GIoU} = \frac{|A \cap B|}{|A \cup B|} - \frac{|C - (A \cup B)|}{|C|} = \text{IoU} - \frac{|C - (A \cup B)|}{|C|}.
+> $$
+>
+> Here, $A$ and $B$ are the prediction and ground truth bounding boxes. $C$ is the smallest convex hull that encloses both $A$ and $B$. $C$ is the smallest box covering $A$ and $B$. The penality term in GIoU loss, will move the predicted box towards the target box in non-overlapping cases.
+
+### Extended Efficient Layer Aggregation Network (E-ELAN)
+
+![ELAN left](computer-vision/res-yolo/elan.png)
+
+Before the "Extended" version, there was standard ELAN. ELAN was designed to solve the gradient degradation problem by optimizing how gradient paths are routed. Instead of just stacking layers endlessly (which creates a single, very long gradient path), ELAN creates multiple parallel branches of varying lengths. Some features pass through a short path (e.g., just one convolution), other features pass through a longer path (e.g., multiple stacked convolutions) and then at the end everything is concatenated. This guarantees that the network always has access to both a shortest gradient path (retaining original, undistorted information) and a longest gradient path (extracting highly complex features).
+
+The problem with standard ELAN is that if you want to make the model smarter, you have to stack more computational blocks. Stacking more blocks eventually destroys the stable gradient paths that ELAN worked so hard to create. E-ELAN (Extended ELAN) solves this by changing how the network scales. Instead of making the network deeper (stacking more blocks), E-ELAN makes it "wider" by expanding the cardinality (the number of parallel groups or branches) without changing the underlying architecture of the computational blocks.
+
+### GELAN
+
+![GELAN](computer-vision/res-yolo/gelan.png)
+
+### Programmable Gradient Information (PGI)
+
+### Non-Maximum Suppression
+
+### DFL Removal
+
+### ProgLoss + STAL
