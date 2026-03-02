@@ -10,7 +10,9 @@ In digital image processing and computer vision, image segmentation is the proce
 
 ## History of Segmentation
 
-**FCN (2015)** Before 2015, segmentation models relied on patch-by-patch classification, which was incredibly slow. Fully Convolutional Networks (FCNs) completely changed the paradigm. FCNs proved that you could train neural networks to make dense, pixel-wise predictions end-to-end. It replaced the dense (fully connected) layers of standard classification networks (like VGG16) with 1x1 convolutions, allowing the network to output spatial heatmaps instead of single class probabilities. It uses a standard CNN backbone to downsample the image and extract features (encoder), followed by transpose convolutions (often called deconvolutions) to upsample the feature maps back to the original image size.
+Before 2015, segmentation models relied on patch-by-patch classification, which was incredibly slow.
+
+**FCN (2015)** Fully Convolutional Networks (FCNs) completely changed the paradigm. FCNs proved that you could train neural networks to make dense, pixel-wise predictions end-to-end. It replaced the dense (fully connected) layers of standard classification networks (like VGG16) with 1x1 convolutions, allowing the network to output spatial heatmaps instead of single class probabilities. It uses a standard CNN backbone to downsample the image and extract features (encoder), followed by transpose convolutions (often called deconvolutions) to upsample the feature maps back to the original image size.
 
 **U-Net (2015)** Developed initially for biomedical image segmentation, U-Net remains one of the most famous and widely adapted architectures today. FCNs lost a lot of fine spatial details during downsampling. U-Net solved this by passing high-resolution feature maps from the encoder directly to the decoder. A symmetric, U-shaped network. The "contracting path" (encoder) captures context through convolutions and pooling. The "expansive path" (decoder) uses up-convolutions. Skip connections concatenate the encoder's feature maps with the decoder's upsampled maps, fusing "what" (semantic context) with "where" (spatial precision).
 
