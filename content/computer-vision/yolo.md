@@ -211,3 +211,53 @@ The problem with standard ELAN is that if you want to make the model smarter, yo
 ### DFL Removal
 
 ### ProgLoss + STAL
+
+### Measuring YOLO Accuracy
+
+![PRCURVE left](computer-vision/res-yolo/precision-recall.png)
+
+In object detection, you cannot simply use standard "accuracy" (like you would in image classification) because predicting where an object is located is just as important as predicting what it is. To solve this, the industry standard relies on Average Precision (AP) and Mean Average Precision (mAP). Before calculating AP, we must define whether a bounding box prediction is correct. This is determined using IoU.
+
+Based on an IoU threshold ($t = 0.50$), we categorize every prediction:
+
+<div class="clear"></div>
+
+- **True Positive (TP):** A correct detection (IoU $\ge t$, correct class).
+
+- **False Positive (FP):** An incorrect detection (IoU $< t$, or duplicate bounding box).
+
+- **False Negative (FN):** A ground truth object that the model completely missed.
+
+From those values we need to calculate two support metrics:
+
+- **Precision** - out of all the objects the model claimed were positive, how many were actually positive.
+
+$$
+    P = \frac{\text{TP}}{\text{TP} + \text{FP}}.
+$$
+
+- **Recall** - out of all the actual ground truth objects in the image, how many did the model found.
+
+$$
+    R = \frac{\text{TP}}{\text{TP} + \text{FN}}.
+$$
+
+When a YOLO model predicts a bounding box, it also outputs a confidence score (e.g., 0.85 certainty that the box contains a car). If you set the confidence threshold very high (e.g., 0.90), the model only keeps predictions it is absolutely sure about. This results in high Precision (few False Positives) but low Recall (many False Negatives). If you lower the threshold to 0.10, the model predicts many boxes, resulting in high Recall but low Precision. Using by moving the threshold we can plot the **Precision-Recall Curve**.
+
+Average Precision (AP) is the mathematical Area Under the Curve (AUC) of the Precision-Recall curve for a single specific class (e.g., only calculating AP for "dogs"). However, the raw PR curve is often jagged and noisy. To calculate the area reliably, we apply interpolation. Instead of using the exact Precision at a given Recall level, we use the maximum Precision found at that Recall level or any higher Recall level. The interpolated precision $P_\text{interp}$ at a specific recall $r$ is defined as:
+
+$$
+    P_\text{interp}(r) = \max_{\tilde{r} \ge r} P(\tilde{r})
+$$
+
+To calculate the final AP, we integrate the area under this smoothed curve using a Riemann sum across all recall points $n$:
+
+$$
+    \text{AP} = \sum_{n} (R_n - R_{n-1}) P_\text{interp}(R_n)
+$$
+
+Where $R_n$ and $R_{n-1}$ are consecutive recall values when traversing the curve. While AP measures how well the model detects one specific class, Mean Average Precision (mAP) tells you how well the model performs across all classes. **mAP** is just the arithmetic mean of the AP values calculated for every class $C$ in the dataset.
+
+$$
+    mAP = \frac{1}{C} \sum_{i=1}^{C} \text{AP}_i
+$$
